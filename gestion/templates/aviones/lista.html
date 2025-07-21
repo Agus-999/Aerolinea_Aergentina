@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Lista de Aviones</h2>
+  <a href="{% url 'crear_avion' %}">Crear Nuevo Avión</a>
+  
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Modelo</th>
+        <th>Capacidad</th>
+        <th>Filas</th>
+        <th>Columnas</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for avion in aviones %}
+        <tr>
+          <td>{{ avion.modelo }}</td>
+          <td>{{ avion.capacidad }}</td>
+          <td>{{ avion.filas }}</td>
+          <td>{{ avion.columnas }}</td>
+          <td>
+            <a href="{% url 'editar_avion' avion.id %}">Editar</a> | 
+            <a href="{% url 'eliminar_avion' avion.id %}">Eliminar</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
