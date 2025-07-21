@@ -5,4 +5,11 @@
 {% block content %}
     <h1>Bienvenidos</h1>
     <p>Página de inicio sin estilo.</p>
+    
+    {% if user.is_authenticated %}
+        <p>Bienvenido, {{ user.username }}.</p>
+        <p>Tu rol es: {{ user.rol }}.</p>
+    {% else %}
+        <p>No has iniciado sesión.</p>
+    {% endif %}
 {% endblock %}

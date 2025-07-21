@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Formulario de Empleado{% endblock %}
+
+{% block content %}
+<h2>{% if accion == 'Editar' %}Editar{% else %}Crear{% endif %} Empleado</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">{% if accion == 'Editar' %}Actualizar{% else %}Crear{% endif %} Empleado</button>
+</form>
+{% endblock %}

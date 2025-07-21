@@ -27,7 +27,8 @@ class CustomUserManager(BaseUserManager):
 # Custom user model
 class Usuario(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = (
-        ('admin', 'Admin'),
+        ('admin', 'Administrador'),
+        ('empleado', 'Empleado'),
         ('cliente', 'Cliente'),
     )
 

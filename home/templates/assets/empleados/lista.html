@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Empleados{% endblock %}
+
+{% block content %}
+<h2>Lista de Empleados</h2>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>Nombre de Usuario</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for empleado in empleados %}
+        <tr>
+            <td>{{ empleado.username }}</td>
+            <td>{{ empleado.email }}</td>
+            <td>{{ empleado.rol }}</td>
+            <td>
+                <a href="{% url 'editar_empleado' empleado.id %}">Editar</a> |
+                <a href="{% url 'eliminar_empleado' empleado.id %}">Eliminar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p><a href="{% url 'crear_empleado' %}">Crear Nuevo Empleado</a></p>
+
+{% endblock %}

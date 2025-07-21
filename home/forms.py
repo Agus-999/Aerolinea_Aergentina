@@ -17,7 +17,6 @@ class RegistroForm(UserCreationForm):
             user.save()
         return user
 
-# Agrega esta clase para solucionar el error actual
 class LoginForm(forms.Form):
     username = forms.CharField()
     password = forms.CharField(widget=forms.PasswordInput)
@@ -35,3 +34,12 @@ class LoginForm(forms.Form):
 
     def get_user(self):
         return self.user
+
+class EmpleadoForm(UserCreationForm):
+    email = forms.EmailField()
+
+    class Meta:
+        model = Usuario
+        fields = ['username', 'email', 'password1', 'password2']
+
+
