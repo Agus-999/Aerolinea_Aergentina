@@ -1,31 +1,55 @@
-🏠 Etapa 2: Creación de la app home y estructura base de la web
+👤 Etapa 3: Registro y Login con roles personalizados
+🧱 Objetivo
+Implementamos un sistema de autenticación personalizado en Django, con soporte para roles (cliente y admin) mediante un modelo de usuario propio.
+Además, personalizamos las vistas de login, logout y registro, y modificamos la interfaz para que muestre las opciones correspondientes según si el usuario ha iniciado sesión o no.
 
-🔧 Creación de la app principal (home)  
-Creamos una nueva app dentro del proyecto Django para manejar la parte principal del sitio:
+⚙️ 1. Configuración del modelo de usuario personalizado
+📄 Archivo: home/models.py
 
-    python manage.py startapp home
-
-🧠 Registro de la app en Django  
-Agregamos `'home'` a la lista de `INSTALLED_APPS` en el archivo `settings.py`:
-
-```python
-INSTALLED_APPS = [
-    ...
-    'home',
-]
-🌐 Configuración de rutas
-En aerolinea_voladora/urls.py, incluimos las URLs de la app home:
+Creamos un modelo Usuario heredando de AbstractBaseUser y usando un CustomUserManager para manejar la creación de usuarios y superusuarios:
 
 python
 Copiar código
-from django.contrib import admin
-from django.urls import path, include
+class Usuario(AbstractBaseUser):
+    ...
+    rol = models.CharField(max_length=20, choices=[('admin', 'Admin'), ('cliente', 'Cliente')], default='cliente')
+🔑 El campo rol se asigna automáticamente:
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('home.urls')),
-]
-Creamos el archivo home/urls.py con la ruta base para la página de inicio:
+'cliente' cuando el usuario se registra desde la web.
+
+'admin' cuando se crea un superusuario usando el comando createsuperuser.
+
+🧠 Luego en settings.py:
+
+python
+Copiar código
+AUTH_USER_MODEL = 'home.Usuario'
+✍️ 2. Formulario de registro personalizado
+📄 Archivo: home/forms.py
+
+Creamos un formulario RegistroForm basado en UserCreationForm que fuerza el rol 'cliente' al guardarlo:
+
+python
+Copiar código
+def save(self, commit=True):
+    user = super().save(commit=False)
+    user.rol = 'cliente'
+    ...
+🔐 3. Vistas de autenticación
+📄 Archivo: home/views.py
+
+Implementamos las vistas para login, registro y logout usando AuthenticationForm y nuestros propios formularios:
+
+login_view: inicia sesión y redirige al inicio.
+
+register_view: registra usuarios con rol 'cliente'.
+
+logout_view: cierra sesión.
+
+Además, la vista inicio muestra el nombre de usuario y su rol si está autenticado.
+
+🌐 4. Rutas configuradas
+📄 Archivo: home/urls.py
 
 python
 Copiar código
@@ -34,85 +58,81 @@ from . import views
 
 urlpatterns = [
     path('', views.inicio, name='inicio'),
+    path('login/', views.login_view, name='login'),
+    path('register/', views.register_view, name='register'),
+    path('logout/', views.logout_view, name='logout'),
 ]
-📄 Creación de vistas y plantillas
-
-📌 En home/views.py, definimos la vista para la página inicial:
+📄 En aerolinea_voladora/urls.py incluimos estas rutas:
 
 python
 Copiar código
-from django.shortcuts import render
-
-def inicio(request):
-    return render(request, 'inicio.html')
-📂 Estructura de carpetas de templates:
-
-arduino
-Copiar código
-home/
-└── templates/
-    ├── base.html
-    └── inicio.html
-📄 En base.html, definimos la estructura principal del sitio:
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('home.urls')),
+]
+🖼️ 5. Plantillas HTML dinámicas
+📄 base.html
 
 html
 Copiar código
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>{% block title %}Aerolínea Argentina{% endblock %}</title>
-</head>
-<body>
-    {% block content %}
-    {% endblock %}
-</body>
-</html>
-📄 En inicio.html, extendemos de la base y colocamos contenido inicial:
+<nav>
+  <ul>
+    <li><a href="{% url 'inicio' %}">Inicio</a></li>
+    {% if user.is_authenticated %}
+        <li><a href="{% url 'logout' %}">Cerrar sesión</a></li>
+    {% else %}
+        <li><a href="{% url 'login' %}">Iniciar sesión</a></li>
+        <li><a href="{% url 'register' %}">Registrarse</a></li>
+    {% endif %}
+  </ul>
+</nav>
+📄 inicio.html
 
-html
+django
 Copiar código
 {% extends 'base.html' %}
 
-{% block title %}Inicio{% endblock %}
-
 {% block content %}
-    <h1>Bienvenido a Aerolínea Argentina</h1>
-    <p>Página de inicio sin estilos.</p>
+  {% if user.is_authenticated %}
+    <h1>Bienvenido {{ user.username }}</h1>
+    <p>Rol: {{ user.rol }}</p>
+  {% else %}
+    <p>Bienvenido visitante, por favor inicia sesión.</p>
+  {% endif %}
 {% endblock %}
-✅ Verificación del funcionamiento
-Ejecutamos el servidor y comprobamos que se visualiza la página de inicio correctamente:
+✅ 6. Verificación
+Creamos un superusuario:
 
-nginx
+bash
 Copiar código
-python manage.py runserver
-🗂️ Estructura actual del proyecto
+python manage.py createsuperuser
+Verificamos que tenga rol admin.
 
-markdown
+Registramos un nuevo usuario desde la web:
+✅ El rol asignado automáticamente es cliente.
+
+Al iniciar sesión, las opciones del menú cambian según el estado.
+
+🗂️ Estructura actual del proyecto
+bash
 Copiar código
 aerolinea_voladora/
 ├── aerolinea_voladora/
-│   ├── __init__.py
-│   ├── asgi.py
-│   ├── settings.py
-│   ├── urls.py
-│   └── wsgi.py
+│   └── settings.py
+│   └── urls.py
 ├── home/
 │   ├── migrations/
 │   ├── templates/
 │   │   ├── base.html
-│   │   └── inicio.html
-│   ├── __init__.py
-│   ├── admin.py
-│   ├── apps.py
+│   │   ├── inicio.html
+│   │   └── assets/
+│   │       ├── login.html
+│   │       └── register.html
 │   ├── models.py
-│   ├── tests.py
+│   ├── forms.py
 │   ├── urls.py
 │   └── views.py
-├── aerolineas_voladoras
 ├── manage.py
-├── requirements.txt
 └── venv/
 ✍️ Autor
-
 Agustín Alejandro Fasano
