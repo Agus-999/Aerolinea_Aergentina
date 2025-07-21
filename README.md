@@ -1,200 +1,141 @@
-👤 **Etapa 3/Empleados_y_Roles_Personalizados: Gestión de Empleados y Clientes con Roles Personalizados**
+**✈️ Etapa 4/Aviones: Gestión de Flota de Aviones**
 
-🧱 **Objetivo**  
-En esta etapa, implementamos un sistema de autenticación y gestión de usuarios con roles personalizados, permitiendo la administración de empleados y clientes. Los administradores pueden gestionar la creación, edición y eliminación de empleados, mientras que los clientes tienen acceso restringido solo a su información. Además, personalizamos las vistas y plantillas para reflejar estas funcionalidades de manera dinámica.
+**🧱 Objetivo**
+En esta etapa desarrollamos un sistema CRUD completo para gestionar los aviones de la aerolínea. Los empleados con permisos pueden crear, ver, editar y eliminar registros de aviones, incluyendo detalles como modelo, capacidad, filas y columnas de asientos. Todo esto se integra dentro de la plataforma protegida por autenticación.
 
-⚙️ **1. Configuración del modelo de usuario personalizado**  
-📄 **Archivo:** `home/models.py`
+**⚙️ 1. Modelo de Avión**
+📄 Archivo: gestion/models.py
 
-Creamos un modelo de usuario llamado `Usuario`, heredado de `AbstractBaseUser`, y usamos un `CustomUserManager` para manejar la creación de usuarios y superusuarios.  
-Se añade un campo `rol` para diferenciar entre administradores y clientes.
-
-```python
-class Usuario(AbstractBaseUser):
-    ...
-    rol = models.CharField(max_length=20, choices=[('admin', 'Admin'), ('empleado', 'Empleado'), ('cliente', 'Cliente')], default='cliente')
-🔑 El campo rol se asigna automáticamente:
-
-'cliente' cuando el usuario se registra desde la web.
-
-'admin' cuando se crea un superusuario usando el comando createsuperuser.
-
-En settings.py, se define el modelo de usuario personalizado:
+Creamos un modelo Avion con los siguientes campos:
 
 python
-Copiar código
-AUTH_USER_MODEL = 'home.Usuario'
-✍️ 2. Formularios personalizados
-📄 Archivo: home/forms.py
+Copiar
+Editar
+class Avion(models.Model):
+    modelo = models.CharField(max_length=100)
+    capacidad = models.PositiveIntegerField()
+    filas = models.PositiveIntegerField()
+    columnas = models.PositiveIntegerField()
+👉 Estos campos permiten representar la distribución de asientos de cada avión de forma estructurada.
 
-Creamos un formulario EmpleadoForm basado en ModelForm para gestionar los empleados, con el campo rol predefinido como 'empleado' al crear un nuevo registro:
+**✍️ 2. Formulario para Avión**
+📄 Archivo: gestion/forms.py
+
+Creamos un formulario AvionForm para manejar la creación y edición de aviones de forma sencilla:
 
 python
-Copiar código
-class EmpleadoForm(forms.ModelForm):
+Copiar
+Editar
+class AvionForm(forms.ModelForm):
     class Meta:
-        model = Usuario
-        fields = ['username', 'email', 'rol']
-    
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.rol = 'empleado'
-        if commit:
-            user.save()
-        return user
-Formulario de registro: Utilizamos el formulario RegistroForm para registrar nuevos usuarios con el rol 'cliente' de manera predeterminada.
+        model = Avion
+        fields = ['modelo', 'capacidad', 'filas', 'columnas']
+**🔧 3. Vistas de Aviones**
+📄 Archivo: gestion/views.py
+
+Se crearon las vistas protegidas para realizar operaciones CRUD sobre los aviones:
+
+lista_aviones: Muestra una tabla con todos los aviones.
+
+crear_avion: Permite agregar un nuevo avión.
+
+editar_avion: Modifica los datos de un avión existente.
+
+eliminar_avion: Elimina un avión de la base de datos.
+
+Todas las vistas requieren que el usuario esté autenticado y tenga el rol adecuado.
+
+**🌐 4. Rutas configuradas**
+📄 Archivo: gestion/urls.py
 
 python
-Copiar código
-def save(self, commit=True):
-    user = super().save(commit=False)
-    user.rol = 'cliente'
-    ...
-🔐 3. Vistas de gestión de empleados y clientes
-📄 Archivo: home/views.py
-
-Implementamos las vistas para crear, editar y eliminar empleados y clientes, utilizando las funciones get_object_or_404, redirect y messages para mostrar mensajes de éxito o error. Las vistas permiten a los administradores gestionar empleados y clientes.
-
-crear_empleado: Crea un nuevo empleado con rol empleado.
-
-editar_empleado: Permite modificar los datos de un empleado existente.
-
-eliminar_empleado: Elimina a un empleado del sistema.
-
-lista_empleados: Muestra una lista de empleados.
-
-lista_clientes: Muestra una lista de clientes.
-
-python
-Copiar código
-@login_required
-def crear_empleado(request):
-    if request.user.rol != 'admin':
-        messages.error(request, 'No tienes permisos para acceder a esta sección.')
-        return redirect('inicio')
-
-    if request.method == 'POST':
-        form = EmpleadoForm(request.POST)
-        if form.is_valid():
-            empleado = form.save(commit=False)
-            empleado.rol = 'empleado'
-            empleado.save()
-            messages.success(request, 'Empleado creado correctamente.')
-            return redirect('lista_empleados')
-        else:
-            messages.error(request, 'Error al crear el empleado.')
-    else:
-        form = EmpleadoForm()
-    return render(request, 'assets/empleados/crear.html', {'form': form})
-🌐 4. Rutas configuradas
-📄 Archivo: home/urls.py
-
-Definimos las rutas para cada vista, incluyendo las vistas de empleados y clientes. Usamos la función include() para incluir las rutas de la app en el archivo principal urls.py.
-
-python
-Copiar código
-from django.urls import path
-from . import views
-
+Copiar
+Editar
 urlpatterns = [
-    path('', views.inicio, name='inicio'),
-    path('empleados/', views.lista_empleados, name='lista_empleados'),
-    path('empleados/crear/', views.crear_empleado, name='crear_empleado'),
-    path('empleados/<int:empleado_id>/editar/', views.editar_empleado, name='editar_empleado'),
-    path('empleados/<int:empleado_id>/eliminar/', views.eliminar_empleado, name='eliminar_empleado'),
-    path('clientes/', views.lista_clientes, name='lista_clientes'),
-    path('clientes/<int:cliente_id>/editar/', views.editar_cliente, name='editar_cliente'),
-    path('clientes/<int:cliente_id>/eliminar/', views.eliminar_cliente, name='eliminar_cliente'),
+    path('aviones/', views.lista_aviones, name='lista_aviones'),
+    path('aviones/nuevo/', views.crear_avion, name='crear_avion'),
+    path('aviones/<int:avion_id>/editar/', views.editar_avion, name='editar_avion'),
+    path('aviones/<int:avion_id>/eliminar/', views.eliminar_avion, name='eliminar_avion'),
 ]
-📄 En aerolinea_voladora/urls.py incluimos estas rutas:
+📄 En aerolinea/urls.py principal se incluyó esta app:
 
 python
-Copiar código
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('home.urls')),
-]
-🖼️ 5. Plantillas HTML dinámicas
-📄 Archivo: base.html
+Copiar
+Editar
+path('gestion/', include('gestion.urls')),
+**🖼️ 5. Plantillas HTML**
+📄 Archivo: Aviones/lista.html
 
-En la plantilla base, se gestionan las opciones de menú dinámicas según el estado de autenticación del usuario.
+Se muestra la lista de aviones en una tabla:
 
 html
-Copiar código
-<nav>
-  <ul>
-    <li><a href="{% url 'inicio' %}">Inicio</a></li>
-    {% if user.is_authenticated %}
-        <li><a href="{% url 'logout' %}">Cerrar sesión</a></li>
-        <li><a href="{% url 'lista_empleados' %}">Empleados</a></li>
-        <li><a href="{% url 'lista_clientes' %}">Clientes</a></li>
-    {% else %}
-        <li><a href="{% url 'login' %}">Iniciar sesión</a></li>
-        <li><a href="{% url 'register' %}">Registrarse</a></li>
-    {% endif %}
-  </ul>
-</nav>
-📄 Archivo: inicio.html
+Copiar
+Editar
+<table border="1">
+  <tr>
+    <th>Modelo</th>
+    <th>Capacidad</th>
+    <th>Filas</th>
+    <th>Columnas</th>
+    <th>Acciones</th>
+  </tr>
+  {% for avion in aviones %}
+    <tr>
+      <td>{{ avion.modelo }}</td>
+      <td>{{ avion.capacidad }}</td>
+      <td>{{ avion.filas }}</td>
+      <td>{{ avion.columnas }}</td>
+      <td>
+        <a href="{% url 'editar_avion' avion.id %}">Editar</a>
+        <a href="{% url 'eliminar_avion' avion.id %}">Eliminar</a>
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+📄 Formulario: Aviones/formulario.html
 
-La vista inicio.html muestra el nombre de usuario y su rol si está autenticado.
+Formulario para crear o editar un avión:
 
 html
-Copiar código
-{% extends 'base.html' %}
-
-{% block content %}
-  {% if user.is_authenticated %}
-    <h1>Bienvenido {{ user.username }}</h1>
-    <p>Rol: {{ user.rol }}</p>
-  {% else %}
-    <p>Bienvenido visitante, por favor inicia sesión.</p>
-  {% endif %}
-{% endblock %}
-✅ 6. Verificación
-Creamos un superusuario:
+Copiar
+Editar
+<form method="POST">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Guardar</button>
+</form>
+✅ 6. Migraciones y base de datos
+Se realizaron correctamente las migraciones:
 
 bash
-Copiar código
-python manage.py createsuperuser
-Verificamos que tenga rol admin.
+Copiar
+Editar
+python manage.py makemigrations
+python manage.py migrate
+El modelo Avion fue agregado sin errores y se puede interactuar con él desde el panel de Django o las vistas.
 
-Registramos un nuevo usuario desde la web:
-✅ El rol asignado automáticamente es cliente.
-
-Al iniciar sesión, las opciones del menú cambian según el estado.
-
-🗂️ Estructura actual del proyecto
-
+**🗂️ Estructura del proyecto**
 bash
-Copiar código
-aerolinea_voladora/
-├── aerolinea_voladora/
-│   └── settings.py
-│   └── urls.py
-├── home/
-│   ├── migrations/
+Copiar
+Editar
+aerolinea/
+├── aerolinea/
+│   ├── settings.py
+│   ├── urls.py
+├── gestion/
 │   ├── templates/
-│   │   ├── base.html
-│   │   ├── inicio.html
-│   │   └── assets/
-│   │       ├── login.html
-│   │       └── register.html
-│   │       ├── empleados/
-│   │       │   ├── crear.html
-│   │       │   ├── editar.html
-│   │       │   └── eliminar.html
-│   │       └── clientes/
-│   │           ├── crear.html
-│   │           ├── editar.html
-│   │           └── eliminar.html
+│   │   └── Aviones/
+│   │       ├── lista.html
+│   │       ├── formulario.html
+│   │       └── eliminar.html
+│   ├── migrations/
 │   ├── models.py
 │   ├── forms.py
 │   ├── urls.py
 │   └── views.py
-├── manage.py
-└── venv/
-✍️ Autor
+├── home/
+│   ├── models.py (Usuario personalizado)
+│   └── views.py (Login/Logout)
+└── manage.py
+**✍️ Autor**
 Agustín Alejandro Fasano
-
-css
-Copiar código

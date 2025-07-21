@@ -13,6 +13,8 @@
                 {% if user.rol == 'admin' %}
                     <li><a href="{% url 'lista_empleados' %}">Empleados</a></li>
                     <li><a href="{% url 'lista_clientes' %}">Clientes</a></li>
+                {% elif user.rol == 'empleado' %}
+                    <li><a href="{% url 'lista_aviones' %}">Aviones</a></li>
                 {% endif %}
                 <li><a href="{% url 'logout' %}">Cerrar sesión</a></li>
             {% else %}
